@@ -251,6 +251,8 @@ class PainterModel(BaseModel):
 
     def forward(self):
         param, decisions = self.net_g(self.render, self.old)
+        print('param shape', param.shape)
+        print('decisions shape', decisions.shape)
         # stroke_param: b, stroke_per_patch, param_per_stroke
         # decision: b, stroke_per_patch, 1
         self.pred_decision = decisions.view(-1, self.opt.used_strokes).contiguous()
