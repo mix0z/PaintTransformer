@@ -208,8 +208,8 @@ class PainterModel(BaseModel):
         # H: 1
         # W: 1
         # K: 1
-        ans = torch.zeros(b, H, W, 3, device=self.device)
-        bs_mask = torch.zeros(b, H, W, 1, device=self.device)
+        ans = torch.zeros(batch_size, H, W, 3, device=self.device)
+        bs_mask = torch.zeros(batch_size, H, W, 1, device=self.device)
         for i in range(0, b, batch_size):
             ans[i:i + batch_size], bs_mask[i:i + batch_size] = render_all(s[i:i + batch_size], c[i:i + batch_size],
                                                                           e[i:i + batch_size],
@@ -241,24 +241,12 @@ class PainterModel(BaseModel):
             gt_param[:, :, -4:-1] = gt_param[:, :, -7:-4]
             self.gt_param = gt_param[:, :, :self.d_shape]
             gt_param = gt_param.view(-1, self.d).contiguous()
-            foregrounds, alphas = self.param2stroke(gt_param, self.patch_size, self.patch_size, torch.ones_like(gt_param[:, 0]))
-            foregrounds = morphology.Dilation2d(m=1)(foregrounds)
-            alphas = morphology.Erosion2d(m=1)(alphas)
-            foregrounds = foregrounds.view(self.opt.batch_size, self.opt.used_strokes, 3, self.patch_size,
-                                           self.patch_size).contiguous()
-            alphas = alphas.view(self.opt.batch_size, self.opt.used_strokes, 3, self.patch_size,
-                                 self.patch_size).contiguous()
+            foregrounds, alphas = self.param2stroke(gt_param, self.patch_size, self.patch_size, torch.ones_like(gt_param[:, 0]), self.opt.batch_size)
+
             self.render = self.old.clone()
             gt_decision = torch.ones(self.opt.batch_size, self.opt.used_strokes, device=self.device)
-            for i in range(self.opt.used_strokes):
-                foreground = foregrounds[:, i, :, :, :]
-                alpha = alphas[:, i, :, :, :]
-                for j in range(i):
-                    iou = (torch.sum(alpha * alphas[:, j, :, :, :], dim=(-3, -2, -1)) + 1e-5) / (
-                            torch.sum(alphas[:, j, :, :, :], dim=(-3, -2, -1)) + 1e-5)
-                    gt_decision[:, i] = ((iou < 0.75) | (~gt_decision[:, j].bool())).float() * gt_decision[:, i]
-                decision = gt_decision[:, i].view(self.opt.batch_size, 1, 1, 1).contiguous()
-                self.render = foreground * alpha * decision + self.render * (1 - alpha * decision)
+
+            self.render = foregrounds * alphas + self.render * (1 - alphas)
             self.gt_decision = gt_decision
 
     def forward(self):
@@ -269,7 +257,7 @@ class PainterModel(BaseModel):
         self.pred_param = param[:, :, :self.d_shape]
         param = param.view(-1, self.d).contiguous()
         decisions = networks.SignWithSigmoidGrad.apply(decisions.view(-1, self.opt.used_strokes, 1, 1, 1).contiguous())
-        foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size, decisions)
+        foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size, decisions, self.opt.batch_size)
         # foreground, alpha: b, stroke_per_patch, 3, output_size, output_size
         self.rec = self.old.clone()
         self.rec = foregrounds * alphas + self.rec * (1 - alphas)
