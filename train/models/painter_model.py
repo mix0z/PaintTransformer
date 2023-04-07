@@ -137,6 +137,7 @@ class PainterModel(BaseModel):
         param_list = torch.split(param, 1, dim=1)
         x0, y0, w, h, theta = [item.squeeze(-1) for item in param_list[:5]]
         R0, G0, B0, R2, G2, B2, _ = param_list[5:]
+        print('R0', R0, 'G0', G0, 'B0', B0, 'R2', R2, 'G2', G2, 'B2', B2)
         sin_theta = torch.sin(torch.acos(torch.tensor(-1., device=param.device)) * theta)
         cos_theta = torch.cos(torch.acos(torch.tensor(-1., device=param.device)) * theta)
         index = torch.full((b,), -1, device=param.device)
