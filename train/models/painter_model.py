@@ -226,7 +226,7 @@ class PainterModel(BaseModel):
             old_param[:, :, :9] = old_param[:, :, :9] * 0.5 + 0.2
             old_param[:, :, -4:-1] = old_param[:, :, -7:-4]
             old_param = old_param.view(-1, self.d).contiguous()
-            foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2, torch.ones_like(old_param[:, 0]))
+            foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2, torch.ones_like(old_param[:, 0]), self.opt.batch_size // 4)
             print('foregrounds shape', foregrounds.shape)
             print('alphas shape', alphas.shape)
             old = torch.zeros(self.opt.batch_size // 4, 3, self.patch_size * 2, self.patch_size * 2, device=self.device)
