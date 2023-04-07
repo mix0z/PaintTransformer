@@ -85,7 +85,7 @@ def sample_quadratic_bezier_curve(s, c, e, num_points=20, dtype=torch.float32):
     (tensor): Coordinates of the points on the Bezier curves, shape [N, num_points, 2]
     """
     N, _ = s.shape
-    t = torch.linspace(0., 1., num_points, dtype=dtype)
+    t = torch.linspace(0., 1., num_points, dtype=dtype, device=s.device)
     t = t.expand(N, num_points)
     s_x = s[..., 0].unsqueeze(1)
     s_y = s[..., 1].unsqueeze(1)
