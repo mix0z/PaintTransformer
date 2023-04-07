@@ -179,12 +179,12 @@ class PainterModel(BaseModel):
         R0, G0, B0, R2, G2, B2, _ = param_list[9:]
         s_X, s_y, c_x, c_y, e_x, e_y, locations_x, locations_y, widths = [item.squeeze(-1) for item in param_list[:9]]
 
-        s = torch.stack([s_X, s_y], dim=-1)[decision > 0]
-        c = torch.stack([c_x, c_y], dim=-1)[decision > 0]
-        e = torch.stack([e_x, e_y], dim=-1)[decision > 0]
-        locations = torch.stack([locations_x, locations_y], dim=-1)[decision > 0]
-        colors = torch.cat([R0, G0, B0], dim=-1)[decision > 0]
-        widths = widths.unsqueeze(-1)[decision > 0]
+        s = torch.stack([s_X, s_y], dim=-1)
+        c = torch.stack([c_x, c_y], dim=-1)
+        e = torch.stack([e_x, e_y], dim=-1)
+        locations = torch.stack([locations_x, locations_y], dim=-1)
+        colors = torch.cat([R0, G0, B0], dim=-1)
+        widths = widths.unsqueeze(-1)
         print('s shape', s.shape)
         print('c shape', c.shape)
         print('e shape', e.shape)
@@ -211,11 +211,14 @@ class PainterModel(BaseModel):
         ans = torch.zeros(batch_size, H, W, 3, device=self.device)
         bs_mask = torch.zeros(batch_size, H, W, 1, device=self.device)
         for i in range(0, b, batch_size):
-            ans[i:i + batch_size], bs_mask[i:i + batch_size] = render_all(s[i:i + batch_size], c[i:i + batch_size],
-                                                                          e[i:i + batch_size],
-                                                                          locations[i:i + batch_size],
-                                                                          colors[i:i + batch_size],
-                                                                          widths[i:i + batch_size], H, W, K)
+            indexes = decision[i:i + batch_size] > 0
+            ans[i:i + batch_size], bs_mask[i:i + batch_size] = render_all(
+                s[i:i + batch_size][indexes],
+                c[i:i + batch_size][indexes],
+                e[i:i + batch_size][indexes],
+                locations[i:i + batch_size][indexes],
+                colors[i:i + batch_size][indexes],
+                widths[i:i + batch_size][indexes], H, W, K)
 
         return ans.permute(0, 3, 1, 2), bs_mask.permute(0, 3, 1, 2)
 
