@@ -170,12 +170,12 @@ class PainterModel(BaseModel):
         R0, G0, B0, R2, G2, B2, _ = param_list[9:]
         s_X, s_y, c_x, c_y, e_x, e_y, locations_x, locations_y, widths = [item.squeeze(-1) for item in param_list[:9]]
 
-        s = torch.stack([s_X, s_y], dim=-1)[decision]
-        c = torch.stack([c_x, c_y], dim=-1)[decision]
-        e = torch.stack([e_x, e_y], dim=-1)[decision]
-        locations = torch.stack([locations_x, locations_y], dim=-1)[decision]
-        colors = torch.cat([R0, G0, B0], dim=-1)[decision]
-        widths = widths.unsqueeze(-1)[decision]
+        s = torch.stack([s_X, s_y], dim=-1)[decision > 0]
+        c = torch.stack([c_x, c_y], dim=-1)[decision > 0]
+        e = torch.stack([e_x, e_y], dim=-1)[decision > 0]
+        locations = torch.stack([locations_x, locations_y], dim=-1)[decision > 0]
+        colors = torch.cat([R0, G0, B0], dim=-1)[decision > 0]
+        widths = widths.unsqueeze(-1)[decision > 0]
 
         # s: b, 2
         # c: b, 2
