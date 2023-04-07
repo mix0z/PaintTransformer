@@ -185,7 +185,19 @@ class PainterModel(BaseModel):
         locations = torch.stack([locations_x, locations_y], dim=-1)[decision > 0]
         colors = torch.cat([R0, G0, B0], dim=-1)[decision > 0]
         widths = widths.unsqueeze(-1)[decision > 0]
-
+        print('s shape', s.shape)
+        print('c shape', c.shape)
+        print('e shape', e.shape)
+        print('locations shape', locations.shape)
+        print('colors shape', colors.shape)
+        print('widths shape', widths.shape)
+        print('decision shape', decision.shape)
+        print('R0 shape', R0.shape)
+        print('G0 shape', G0.shape)
+        print('B0 shape', B0.shape)
+        print('R2 shape', R2.shape)
+        print('G2 shape', G2.shape)
+        print('B2 shape', B2.shape)
         # s: b, 2
         # c: b, 2
         # e: b, 2
