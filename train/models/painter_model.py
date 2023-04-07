@@ -131,6 +131,7 @@ class PainterModel(BaseModel):
             self.optimizers.append(self.optimizer)
 
     def param2stroke(self, param, H, W):
+        print('param shape', param.shape)
         # param: b, 12
         b = param.shape[0]
         param_list = torch.split(param, 1, dim=1)
@@ -161,7 +162,8 @@ class PainterModel(BaseModel):
         grid = torch.nn.functional.affine_grid(warp, torch.Size((b, 3, H, W)), align_corners=False)
         brush = torch.nn.functional.grid_sample(brush, grid, align_corners=False)
         alphas = torch.nn.functional.grid_sample(alphas, grid, align_corners=False)
-
+        print('brush shape', brush.shape)
+        print('alphas shape', alphas.shape)
         return brush, alphas
 
     def set_input(self, input_dict):
