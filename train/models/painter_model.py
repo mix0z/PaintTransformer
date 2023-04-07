@@ -39,8 +39,8 @@ def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gra
     H_, W_, r1, r2 = canvas_with_nearest_Bs_bs.shape
     canvas_with_nearest_Bs_bs = canvas_with_nearest_Bs_bs.repeat_interleave(H // H_, dim=0).repeat_interleave(
         W // W_, dim=1)
-    t_H = torch.linspace(0., float(H), H)
-    t_W = torch.linspace(0., float(W), W)
+    t_H = torch.linspace(0., float(H), H, device=curve_points.device)
+    t_W = torch.linspace(0., float(W), W, device=curve_points.device)
     t_H = t_H.to(dtype)
     t_W = t_W.to(dtype)
     P_y, P_x = torch.meshgrid(t_H, t_W)
