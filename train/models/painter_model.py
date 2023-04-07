@@ -209,11 +209,8 @@ class PainterModel(BaseModel):
             foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2, torch.ones_like(old_param[:, 0]))
             print('foregrounds shape', foregrounds.shape)
             print('alphas shape', alphas.shape)
-            foregrounds = foregrounds.view(self.opt.batch_size // 4, 3, self.patch_size * 2,
-                                           self.patch_size * 2).contiguous()
-            alphas = alphas.view(self.opt.batch_size // 4, 3, self.patch_size * 2,
-                                 self.patch_size * 2).contiguous()
             old = torch.zeros(self.opt.batch_size // 4, 3, self.patch_size * 2, self.patch_size * 2, device=self.device)
+            print('old shape', old.shape)
             old = foregrounds * alphas + old * (1 - alphas)
             old = old.view(self.opt.batch_size // 4, 3, 2, self.patch_size, 2, self.patch_size).contiguous()
             old = old.permute(0, 2, 4, 1, 3, 5).contiguous()
@@ -253,7 +250,6 @@ class PainterModel(BaseModel):
         param = param.view(-1, self.d).contiguous()
         decisions = networks.SignWithSigmoidGrad.apply(decisions.view(-1, self.opt.used_strokes, 1, 1, 1).contiguous())
         foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size, decisions)
-
         # foreground, alpha: b, stroke_per_patch, 3, output_size, output_size
         self.rec = self.old.clone()
         self.rec = foregrounds * alphas + self.rec * (1 - alphas)
