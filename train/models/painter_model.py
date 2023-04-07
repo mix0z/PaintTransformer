@@ -7,6 +7,71 @@ from scipy.optimize import linear_sum_assignment
 from PIL import Image
 
 
+def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gray', dtype=torch.float32):
+    N, S, _ = curve_points.shape
+    t_H = torch.linspace(0., float(H), int(H // 5))
+    t_W = torch.linspace(0., float(W), int(W // 5))
+    t_H = t_H.to(dtype)
+    t_W = t_W.to(dtype)
+    P_y, P_x = torch.meshgrid(t_H, t_W)
+    P = torch.stack([P_x, P_y], dim=-1)
+    D_to_all_B_centers = torch.sum((P.unsqueeze(-2) - locations).square(), dim=-1)
+    _, idcs = torch.topk(-D_to_all_B_centers, k=K)
+    canvas_with_nearest_Bs = torch.index_select(curve_points, 0, idcs.flatten()).view(*idcs.shape, S, 2)
+    canvas_with_nearest_Bs_colors = torch.index_select(colors, 0, idcs.flatten()).view(*idcs.shape, 3)
+    canvas_with_nearest_Bs_bs = torch.index_select(widths, 0, idcs.flatten()).view(*idcs.shape, 1)
+    H_, W_, r1, r2, r3 = canvas_with_nearest_Bs.shape
+    canvas_with_nearest_Bs = canvas_with_nearest_Bs.repeat_interleave(H // H_, dim=0).repeat_interleave(W // W_,
+                                                                                                        dim=1)
+    H_, W_, r1, r2 = canvas_with_nearest_Bs_colors.shape
+    canvas_with_nearest_Bs_colors = canvas_with_nearest_Bs_colors.repeat_interleave(H // H_,
+                                                                                    dim=0).repeat_interleave(
+        W // W_, dim=1)
+    H_, W_, r1, r2 = canvas_with_nearest_Bs_bs.shape
+    canvas_with_nearest_Bs_bs = canvas_with_nearest_Bs_bs.repeat_interleave(H // H_, dim=0).repeat_interleave(
+        W // W_, dim=1)
+    t_H = torch.linspace(0., float(H), H)
+    t_W = torch.linspace(0., float(W), W)
+    t_H = t_H.to(dtype)
+    t_W = t_W.to(dtype)
+    P_y, P_x = torch.meshgrid(t_H, t_W)
+    P_full = torch.stack([P_x, P_y], dim=-1)
+    canvas_with_nearest_Bs_a = canvas_with_nearest_Bs[:, :, :, :-1]
+    canvas_with_nearest_Bs_b = canvas_with_nearest_Bs[:, :, :, 1:]
+    canvas_with_nearest_Bs_b_a = canvas_with_nearest_Bs_b - canvas_with_nearest_Bs_a
+    P_full_canvas_with_nearest_Bs_a = (P_full.unsqueeze(2).unsqueeze(2) - canvas_with_nearest_Bs_a)
+    t = (canvas_with_nearest_Bs_b_a * P_full_canvas_with_nearest_Bs_a).sum(dim=-1) / (
+            canvas_with_nearest_Bs_b_a.square().sum(dim=-1) + 1e-8)
+    t = torch.clamp(t, 0.0, 1.0)
+    closest_points_on_each_line_segment = canvas_with_nearest_Bs_a + t.unsqueeze(-1) * canvas_with_nearest_Bs_b_a
+    dist_to_closest_point_on_line_segment = (
+            P_full.unsqueeze(2).unsqueeze(2) - closest_points_on_each_line_segment).square().sum(dim=-1)
+    min_values, _ = dist_to_closest_point_on_line_segment.min(dim=-1)
+    min_values, _ = min_values.min(dim=-1)
+
+    I_NNs_B_ranking = torch.softmax(100000. * (1.0 / (1e-8 + dist_to_closest_point_on_line_segment.min(dim=-1)[0])),
+                                    dim=-1)  # [H, W, N]
+
+    I_colors = torch.einsum('hwnf,hwn->hwf', canvas_with_nearest_Bs_colors, I_NNs_B_ranking)  # [H, W, 3]
+
+    # I_NNs_B_ranking = torch.softmax(100000. * (1.0 / (1e-8 + min_values)), dim=-1)
+    # I_colors = (canvas_with_nearest_Bs_colors * I_NNs_B_ranking.unsqueeze(-1)).sum(dim=2)
+    bs = torch.einsum('hwnf,hwn->hwf', canvas_with_nearest_Bs_bs, I_NNs_B_ranking)  # [H, W, 1]
+    bs_mask = torch.sigmoid(bs - min_values.unsqueeze(-1))
+
+    if canvas_color == 'gray':
+        canvas = torch.ones_like(I_colors) * 0.5
+    elif canvas_color == 'white':
+        canvas = torch.ones_like(I_colors)
+    elif canvas_color == 'black':
+        canvas = torch.zeros_like(I_colors)
+    elif canvas_color == 'noise':
+        canvas = torch.normal(mean=0.0, std=0.1, size=I_colors.shape, dtype=dtype)
+
+    I = I_colors * bs_mask + (1 - bs_mask) * canvas
+    return I
+
+
 class PainterModel(BaseModel):
 
     @staticmethod

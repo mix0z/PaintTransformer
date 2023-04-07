@@ -1,4 +1,4 @@
-python train.py \
+python3 test_dataset.py \
 --name painter \
 --gpu_ids 0 \
 --model painter \
