@@ -217,7 +217,7 @@ class PainterModel(BaseModel):
                                                                           colors[i:i + batch_size],
                                                                           widths[i:i + batch_size], H, W, K)
 
-        return ans, bs_mask
+        return ans.transpose(0, 3, 1, 2), bs_mask.transpose(0, 3, 1, 2)
 
     def set_input(self, input_dict):
         self.image_paths = input_dict['A_paths']
