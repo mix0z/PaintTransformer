@@ -207,17 +207,14 @@ class PainterModel(BaseModel):
             old_param[:, :, -4:-1] = old_param[:, :, -7:-4]
             old_param = old_param.view(-1, self.d).contiguous()
             foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2, torch.ones_like(old_param[:, 0]))
-            foregrounds = morphology.Dilation2d(m=1)(foregrounds)
-            alphas = morphology.Erosion2d(m=1)(alphas)
-            foregrounds = foregrounds.view(self.opt.batch_size // 4, self.opt.used_strokes, 3, self.patch_size * 2,
+            print('foregrounds shape', foregrounds.shape)
+            print('alphas shape', alphas.shape)
+            foregrounds = foregrounds.view(self.opt.batch_size // 4, 3, self.patch_size * 2,
                                            self.patch_size * 2).contiguous()
-            alphas = alphas.view(self.opt.batch_size // 4, self.opt.used_strokes, 3, self.patch_size * 2,
+            alphas = alphas.view(self.opt.batch_size // 4, 3, self.patch_size * 2,
                                  self.patch_size * 2).contiguous()
             old = torch.zeros(self.opt.batch_size // 4, 3, self.patch_size * 2, self.patch_size * 2, device=self.device)
-            for i in range(self.opt.used_strokes):
-                foreground = foregrounds[:, i, :, :, :]
-                alpha = alphas[:, i, :, :, :]
-                old = foreground * alpha + old * (1 - alpha)
+            old = foregrounds * alphas + old * (1 - alphas)
             old = old.view(self.opt.batch_size // 4, 3, 2, self.patch_size, 2, self.patch_size).contiguous()
             old = old.permute(0, 2, 4, 1, 3, 5).contiguous()
             self.old = old.view(self.opt.batch_size, 3, self.patch_size, self.patch_size).contiguous()
