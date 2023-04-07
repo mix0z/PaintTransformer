@@ -250,6 +250,9 @@ class PainterModel(BaseModel):
             self.gt_decision = gt_decision
 
     def forward(self):
+        print("================FORWARD================")
+        print("render", self.render.shape)
+        print("old", self.old.shape)
         param, decisions = self.net_g(self.render, self.old)
         print('param shape', param.shape)
         print('decisions shape', decisions.shape)
