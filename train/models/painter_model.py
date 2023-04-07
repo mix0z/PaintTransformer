@@ -326,6 +326,7 @@ class PainterModel(BaseModel):
                     1, valid_gt_param.shape[0], 1)
                 valid_gt_param_broad = valid_gt_param.unsqueeze(0).contiguous().repeat(
                     self.pred_param.shape[1], 1, 1)
+                print(pred_param_broad.shape, valid_gt_param_broad.shape)
                 cost_matrix_w = self.gaussian_w_distance(pred_param_broad, valid_gt_param_broad)
                 decision = self.pred_decision[i]
                 cost_matrix_decision = (1 - decision).unsqueeze(-1).repeat(1, valid_gt_param.shape[0])
