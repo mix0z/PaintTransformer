@@ -9,8 +9,8 @@ from PIL import Image
 
 def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gray', dtype=torch.float32):
     N, S, _ = curve_points.shape
-    t_H = torch.linspace(0., float(H), int(H // 5))
-    t_W = torch.linspace(0., float(W), int(W // 5))
+    t_H = torch.linspace(0., float(H), int(H // 5), device=curve_points.device)
+    t_W = torch.linspace(0., float(W), int(W // 5), device=curve_points.device)
     t_H = t_H.to(dtype)
     t_W = t_W.to(dtype)
     P_y, P_x = torch.meshgrid(t_H, t_W)
