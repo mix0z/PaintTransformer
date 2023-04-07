@@ -69,7 +69,38 @@ def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gra
         canvas = torch.normal(mean=0.0, std=0.1, size=I_colors.shape, dtype=dtype)
 
     I = I_colors * bs_mask + (1 - bs_mask) * canvas
-    return I
+    return I, bs_mask
+
+
+def sample_quadratic_bezier_curve(s, c, e, num_points=20, dtype=torch.float32):
+    """
+    Samples points from the quadratic bezier curves defined by the control points.
+    Number of points to sample is num.
+    Args:
+    s (tensor): Start point of each curve, shape [N, 2].
+    c (tensor): Control point of each curve, shape [N, 2].
+    e (tensor): End point of each curve, shape [N, 2].
+    num_points (int): Number of points to sample on every curve.
+    Return:
+    (tensor): Coordinates of the points on the Bezier curves, shape [N, num_points, 2]
+    """
+    N, _ = s.shape
+    t = torch.linspace(0., 1., num_points, dtype=dtype)
+    t = t.expand(N, num_points)
+    s_x = s[..., 0].unsqueeze(1)
+    s_y = s[..., 1].unsqueeze(1)
+    e_x = e[..., 0].unsqueeze(1)
+    e_y = e[..., 1].unsqueeze(1)
+    c_x = c[..., 0].unsqueeze(1)
+    c_y = c[..., 1].unsqueeze(1)
+    x = c_x + (1. - t) ** 2 * (s_x - c_x) + t ** 2 * (e_x - c_x)
+    y = c_y + (1. - t) ** 2 * (s_y - c_y) + t ** 2 * (e_y - c_y)
+    return torch.stack([x, y], dim=-1)
+
+
+def render_all(s, c, e, locations, colors, widths, H, W, K, canvas_color='gray', num_points=20, dtype=torch.float32):
+    curve_points = sample_quadratic_bezier_curve(s + locations, c + locations, e + locations, num_points, dtype)
+    return renderer(curve_points, locations, colors, widths, H, W, K, canvas_color, dtype)
 
 
 class PainterModel(BaseModel):
@@ -93,8 +124,8 @@ class PainterModel(BaseModel):
         self.loss_names = ['pixel', 'gt', 'w', 'decision']
         self.visual_names = ['old', 'render', 'rec']
         self.model_names = ['g']
-        self.d = 12  # xc, yc, w, h, theta, R0, G0, B0, R2, G2, B2, A
-        self.d_shape = 5
+        self.d = 16  # s_x, s_y, e_x, e_y, c_x, c_y, x, y, w, r0, g0, b0, r1, g1, b1, a
+        self.d_shape = 9
 
         def read_img(img_path, img_type='RGB'):
             img = Image.open(img_path).convert(img_type)
@@ -130,51 +161,43 @@ class PainterModel(BaseModel):
             self.optimizer = torch.optim.Adam(self.net_g.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer)
 
-    def param2stroke(self, param, H, W):
+    def param2stroke(self, param, H, W, decision):
+        K = 5
         print('param shape', param.shape)
         # param: b, 12
         b = param.shape[0]
         param_list = torch.split(param, 1, dim=1)
-        x0, y0, w, h, theta = [item.squeeze(-1) for item in param_list[:5]]
-        R0, G0, B0, R2, G2, B2, _ = param_list[5:]
-        print('R0', R0, 'G0', G0, 'B0', B0, 'R2', R2, 'G2', G2, 'B2', B2)
-        sin_theta = torch.sin(torch.acos(torch.tensor(-1., device=param.device)) * theta)
-        cos_theta = torch.cos(torch.acos(torch.tensor(-1., device=param.device)) * theta)
-        index = torch.full((b,), -1, device=param.device)
-        index[h > w] = 0
-        index[h <= w] = 1
-        brush = self.meta_brushes[index.long()]
-        alphas = torch.cat([brush, brush, brush], dim=1)
-        alphas = (alphas > 0).float()
-        t = torch.arange(0, brush.shape[2], device=param.device).unsqueeze(0) / brush.shape[2]
-        color_map = torch.stack([R0 * (1 - t) + R2 * t, G0 * (1 - t) + G2 * t, B0 * (1 - t) + B2 * t], dim=1)
-        color_map = color_map.unsqueeze(-1).repeat(1, 1, 1, brush.shape[3])
-        brush = brush * color_map
+        R0, G0, B0, R2, G2, B2, _ = param_list[9:]
+        s_X, s_y, c_x, c_y, e_x, e_y, locations_x, locations_y, widths = [item.squeeze(-1) for item in param_list[:9]]
 
-        warp_00 = cos_theta / w
-        warp_01 = sin_theta * H / (W * w)
-        warp_02 = (1 - 2 * x0) * cos_theta / w + (1 - 2 * y0) * sin_theta * H / (W * w)
-        warp_10 = -sin_theta * W / (H * h)
-        warp_11 = cos_theta / h
-        warp_12 = (1 - 2 * y0) * cos_theta / h - (1 - 2 * x0) * sin_theta * W / (H * h)
-        warp_0 = torch.stack([warp_00, warp_01, warp_02], dim=1)
-        warp_1 = torch.stack([warp_10, warp_11, warp_12], dim=1)
-        warp = torch.stack([warp_0, warp_1], dim=1)
-        grid = torch.nn.functional.affine_grid(warp, torch.Size((b, 3, H, W)), align_corners=False)
-        brush = torch.nn.functional.grid_sample(brush, grid, align_corners=False)
-        alphas = torch.nn.functional.grid_sample(alphas, grid, align_corners=False)
-        print('brush shape', brush.shape)
-        print('alphas shape', alphas.shape)
-        return brush, alphas
+        s = torch.stack([s_X, s_y], dim=-1)[decision]
+        c = torch.stack([c_x, c_y], dim=-1)[decision]
+        e = torch.stack([e_x, e_y], dim=-1)[decision]
+        locations = torch.stack([locations_x, locations_y], dim=-1)[decision]
+        colors = torch.cat([R0, G0, B0], dim=-1)[decision]
+        widths = widths.unsqueeze(-1)[decision]
+
+        # s: b, 2
+        # c: b, 2
+        # e: b, 2
+        # locations: b, 2
+        # colors: b, 3
+        # widths: b, 1
+        # decision: b, 1
+        # H: 1
+        # W: 1
+        # K: 1
+
+        return render_all(s, c, e, locations, colors, widths, H, W, K)
 
     def set_input(self, input_dict):
         self.image_paths = input_dict['A_paths']
         with torch.no_grad():
             old_param = torch.rand(self.opt.batch_size // 4, self.opt.used_strokes, self.d, device=self.device)
-            old_param[:, :, :4] = old_param[:, :, :4] * 0.5 + 0.2
+            old_param[:, :, :9] = old_param[:, :, :9] * 0.5 + 0.2
             old_param[:, :, -4:-1] = old_param[:, :, -7:-4]
             old_param = old_param.view(-1, self.d).contiguous()
-            foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2)
+            foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2, torch.ones_like(old_param[:, 0]))
             foregrounds = morphology.Dilation2d(m=1)(foregrounds)
             alphas = morphology.Erosion2d(m=1)(alphas)
             foregrounds = foregrounds.view(self.opt.batch_size // 4, self.opt.used_strokes, 3, self.patch_size * 2,
@@ -191,11 +214,11 @@ class PainterModel(BaseModel):
             self.old = old.view(self.opt.batch_size, 3, self.patch_size, self.patch_size).contiguous()
 
             gt_param = torch.rand(self.opt.batch_size, self.opt.used_strokes, self.d, device=self.device)
-            gt_param[:, :, :4] = gt_param[:, :, :4] * 0.5 + 0.2
+            gt_param[:, :, :9] = gt_param[:, :, :9] * 0.5 + 0.2
             gt_param[:, :, -4:-1] = gt_param[:, :, -7:-4]
             self.gt_param = gt_param[:, :, :self.d_shape]
             gt_param = gt_param.view(-1, self.d).contiguous()
-            foregrounds, alphas = self.param2stroke(gt_param, self.patch_size, self.patch_size)
+            foregrounds, alphas = self.param2stroke(gt_param, self.patch_size, self.patch_size, torch.ones_like(gt_param[:, 0]))
             foregrounds = morphology.Dilation2d(m=1)(foregrounds)
             alphas = morphology.Erosion2d(m=1)(alphas)
             foregrounds = foregrounds.view(self.opt.batch_size, self.opt.used_strokes, 3, self.patch_size,
@@ -222,20 +245,12 @@ class PainterModel(BaseModel):
         self.pred_decision = decisions.view(-1, self.opt.used_strokes).contiguous()
         self.pred_param = param[:, :, :self.d_shape]
         param = param.view(-1, self.d).contiguous()
-        foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size)
-        foregrounds = morphology.Dilation2d(m=1)(foregrounds)
-        alphas = morphology.Erosion2d(m=1)(alphas)
-        # foreground, alpha: b * stroke_per_patch, 3, output_size, output_size
-        foregrounds = foregrounds.view(-1, self.opt.used_strokes, 3, self.patch_size, self.patch_size)
-        alphas = alphas.view(-1, self.opt.used_strokes, 3, self.patch_size, self.patch_size)
+        foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size, decisions)
+
         # foreground, alpha: b, stroke_per_patch, 3, output_size, output_size
         decisions = networks.SignWithSigmoidGrad.apply(decisions.view(-1, self.opt.used_strokes, 1, 1, 1).contiguous())
         self.rec = self.old.clone()
-        for j in range(foregrounds.shape[1]):
-            foreground = foregrounds[:, j, :, :, :]
-            alpha = alphas[:, j, :, :, :]
-            decision = decisions[:, j, :, :, :]
-            self.rec = foreground * alpha * decision + self.rec * (1 - alpha * decision)
+        self.rec = foregrounds * alphas + self.rec * (1 - alphas)
 
     @staticmethod
     def get_sigma_sqrt(w, h, theta):
