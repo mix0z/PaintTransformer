@@ -17,6 +17,8 @@ def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gra
     print('K', K)
     print('canvas_color', canvas_color)
     print('dtype', dtype)
+    if K <= 0:
+        return torch.zeros((H, W, 3), device=curve_points.device, dtype=dtype), torch.zeros((H, W, 1), device=curve_points.device, dtype=dtype)
     N, S, _ = curve_points.shape
     t_H = torch.linspace(0., float(H), int(H // 5), device=curve_points.device)
     t_W = torch.linspace(0., float(W), int(W // 5), device=curve_points.device)
@@ -218,7 +220,7 @@ class PainterModel(BaseModel):
                 e[i:i + batch_size][indexes],
                 locations[i:i + batch_size][indexes],
                 colors[i:i + batch_size][indexes],
-                widths[i:i + batch_size][indexes], H, W, K)
+                widths[i:i + batch_size][indexes], H, W, min(K, indexes.sum().item()))
 
         return ans.permute(0, 3, 1, 2), bs_mask.permute(0, 3, 1, 2)
 
