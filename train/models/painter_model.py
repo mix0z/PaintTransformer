@@ -8,6 +8,15 @@ from PIL import Image
 
 
 def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gray', dtype=torch.float32):
+    print('curve_points.shape', curve_points.shape)
+    print('locations.shape', locations.shape)
+    print('colors.shape', colors.shape)
+    print('widths.shape', widths.shape)
+    print('H', H)
+    print('W', W)
+    print('K', K)
+    print('canvas_color', canvas_color)
+    print('dtype', dtype)
     N, S, _ = curve_points.shape
     t_H = torch.linspace(0., float(H), int(H // 5), device=curve_points.device)
     t_W = torch.linspace(0., float(W), int(W // 5), device=curve_points.device)
