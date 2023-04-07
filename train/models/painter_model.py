@@ -159,7 +159,7 @@ class PainterModel(BaseModel):
         self.pred_param = None
         self.gt_decision = None
         self.pred_decision = None
-        self.patch_size = 32
+        self.patch_size = 30
         self.loss_pixel = torch.tensor(0., device=self.device)
         self.loss_gt = torch.tensor(0., device=self.device)
         self.loss_w = torch.tensor(0., device=self.device)
