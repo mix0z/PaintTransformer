@@ -258,7 +258,7 @@ class PainterModel(BaseModel):
         self.pred_decision = decisions.view(-1, self.opt.used_strokes).contiguous()
         self.pred_param = param[:, :, :self.d_shape]
         param = param.view(-1, self.d).contiguous()
-        foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size, decisions.view(-1, self.opt.used_strokes).contiguous(), self.opt.batch_size)
+        foregrounds, alphas = self.param2stroke(param, self.patch_size, self.patch_size, decisions.view(-1).contiguous(), self.opt.batch_size)
         decisions = networks.SignWithSigmoidGrad.apply(decisions.view(-1, self.opt.used_strokes, 1, 1, 1).contiguous())
 
         # foreground, alpha: b, stroke_per_patch, 3, output_size, output_size
