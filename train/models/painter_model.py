@@ -170,7 +170,7 @@ class PainterModel(BaseModel):
             self.optimizer = torch.optim.Adam(self.net_g.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer)
 
-    def param2stroke(self, param, H, W, decision):
+    def param2stroke(self, param, H, W, decision, batch_size):
         K = 5
         print('param shape', param.shape)
         # param: b, 12
@@ -208,8 +208,16 @@ class PainterModel(BaseModel):
         # H: 1
         # W: 1
         # K: 1
+        ans = torch.zeros(b, H, W, 3, device=self.device)
+        bs_mask = torch.zeros(b, H, W, 1, device=self.device)
+        for i in range(0, b, batch_size):
+            ans[i:i + batch_size], bs_mask[i:i + batch_size] = render_all(s[i:i + batch_size], c[i:i + batch_size],
+                                                                          e[i:i + batch_size],
+                                                                          locations[i:i + batch_size],
+                                                                          colors[i:i + batch_size],
+                                                                          widths[i:i + batch_size], H, W, K)
 
-        return render_all(s, c, e, locations, colors, widths, H, W, K)
+        return ans, bs_mask
 
     def set_input(self, input_dict):
         self.image_paths = input_dict['A_paths']
