@@ -317,6 +317,11 @@ class PainterModel(BaseModel):
         print("param_1", param_1.shape)
         print("param_2", param_2.shape)
         s_1, c_1, e_1, mu_1, w_1 = torch.split(param_1, (2, 2, 2, 2, 1), dim=-1)
+        print("s_1", s_1.shape)
+        print("c_1", c_1.shape)
+        print("e_1", e_1.shape)
+        print("mu_1", mu_1.shape)
+        print("w_1", w_1.shape)
 
 
         h_1 = self.length_quadratic_bezier_curve(s_1, c_1, e_1)
