@@ -314,30 +314,20 @@ class PainterModel(BaseModel):
         return simpsons_rule(0, 1, n, lambda t: torch.linalg.norm(derivative(t), dim=-1))
 
     def gaussian_w_distance(self, param_1, param_2):
-        print("param_1", param_1.shape)
-        print("param_2", param_2.shape)
+
         s_1, c_1, e_1, mu_1, w_1 = torch.split(param_1, (2, 2, 2, 2, 1), dim=-1)
         h_1 = self.length_quadratic_bezier_curve(s_1.view(-1, 2), c_1.view(-1, 2), e_1.view(-1, 2)).view(s_1.shape[:-1])
         theta_1 = torch.atan2(e_1.view(-1, 2)[:, 0] - s_1.view(-1, 2)[:, 0], e_1.view(-1, 2)[:, 1] - s_1.view(-1, 2)[:, 1]).view(s_1.shape[:-1])
-        print("s_1", s_1.shape)
-        print("c_1", c_1.shape)
-        print("e_1", e_1.shape)
-        print("h_1", mu_1.shape)
-        print("theta_1", theta_1.shape)
 
         # mu_1, w_1, h_1, theta_1 = torch.split(param_1, (2, 1, 1, 1), dim=-1)
         w_1 = w_1.squeeze(-1)
         # h_1 = h_1.squeeze(-1)
         theta_1 = torch.acos(torch.tensor(-1., device=param_1.device)) * theta_1.squeeze(-1)
-        print("theta_1", theta_1.shape)
         trace_1 = (w_1 ** 2 + h_1 ** 2) / 4
 
         s_2, c_2, e_2, mu_2, w_2 = torch.split(param_2, (2, 2, 2, 2, 1), dim=-1)
-        s_2 = s_2.squeeze(-1)
-        c_2 = c_2.squeeze(-1)
-        e_2 = e_2.squeeze(-1)
-        h_2 = self.length_quadratic_bezier_curve(s_2, c_2, e_2)
-        theta_2 = torch.atan2(e_2[:, 0] - s_2[:, 0], e_2[:, 1] - s_2[:, 1])
+        h_2 = self.length_quadratic_bezier_curve(s_2.view(-1, 2), c_2.view(-1, 2), e_2.view(-1, 2)).view(s_2.shape[:-1])
+        theta_2 = torch.atan2(e_2.view(-1, 2)[:, 0] - s_2.view(-1, 2)[:, 0], e_2.view(-1, 2)[:, 1] - s_2.view(-1, 2)[:, 1]).view(s_2.shape[:-1])
         # mu_2, w_2, h_2, theta_2 = torch.split(param_2, (2, 1, 1, 1), dim=-1)
         w_2 = w_2.squeeze(-1)
         # h_2 = h_2.squeeze(-1)
