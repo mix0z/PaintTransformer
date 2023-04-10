@@ -334,6 +334,7 @@ class PainterModel(BaseModel):
         h_2 = h_2.squeeze(-1)
         theta_2 = torch.acos(torch.tensor(-1., device=param_2.device)) * theta_2.squeeze(-1)
         trace_2 = (w_2 ** 2 + h_2 ** 2) / 4
+        print(w_1.shape, h_1.shape, theta_1.shape)
         sigma_1_sqrt = self.get_sigma_sqrt(w_1, h_1, theta_1)
         sigma_2 = self.get_sigma(w_2, h_2, theta_2)
         trace_12 = torch.matmul(torch.matmul(sigma_1_sqrt, sigma_2), sigma_1_sqrt)
