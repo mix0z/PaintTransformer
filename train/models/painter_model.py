@@ -8,15 +8,6 @@ from PIL import Image
 
 
 def renderer(curve_points, locations, colors, widths, H, W, K, canvas_color='gray', dtype=torch.float32):
-    print('curve_points.shape', curve_points.shape)
-    print('locations.shape', locations.shape)
-    print('colors.shape', colors.shape)
-    print('widths.shape', widths.shape)
-    print('H', H)
-    print('W', W)
-    print('K', K)
-    print('canvas_color', canvas_color)
-    print('dtype', dtype)
     if K <= 0:
         return torch.zeros((H, W, 3), device=curve_points.device, dtype=dtype), torch.zeros((H, W, 1), device=curve_points.device, dtype=dtype)
     N, S, _ = curve_points.shape
@@ -174,7 +165,6 @@ class PainterModel(BaseModel):
 
     def param2stroke(self, param, H, W, decision, batch_size):
         K = 5
-        print('param shape', param.shape)
         # param: b, 12
         b = param.shape[0]
         param_list = torch.split(param, 1, dim=1)
@@ -187,19 +177,7 @@ class PainterModel(BaseModel):
         locations = torch.stack([locations_x, locations_y], dim=-1)
         colors = torch.cat([R0, G0, B0], dim=-1)
         widths = widths.unsqueeze(-1)
-        print('s shape', s.shape)
-        print('c shape', c.shape)
-        print('e shape', e.shape)
-        print('locations shape', locations.shape)
-        print('colors shape', colors.shape)
-        print('widths shape', widths.shape)
-        print('decision shape', decision.shape)
-        print('R0 shape', R0.shape)
-        print('G0 shape', G0.shape)
-        print('B0 shape', B0.shape)
-        print('R2 shape', R2.shape)
-        print('G2 shape', G2.shape)
-        print('B2 shape', B2.shape)
+
         # s: b, 2
         # c: b, 2
         # e: b, 2
@@ -232,10 +210,8 @@ class PainterModel(BaseModel):
             old_param[:, :, -4:-1] = old_param[:, :, -7:-4]
             old_param = old_param.view(-1, self.d).contiguous()
             foregrounds, alphas = self.param2stroke(old_param, self.patch_size * 2, self.patch_size * 2, torch.ones_like(old_param[:, 0]), self.opt.batch_size // 4)
-            print('foregrounds shape', foregrounds.shape)
-            print('alphas shape', alphas.shape)
+
             old = torch.zeros(self.opt.batch_size // 4, 3, self.patch_size * 2, self.patch_size * 2, device=self.device)
-            print('old shape', old.shape)
             old = foregrounds * alphas + old * (1 - alphas)
             old = old.view(self.opt.batch_size // 4, 3, 2, self.patch_size, 2, self.patch_size).contiguous()
             old = old.permute(0, 2, 4, 1, 3, 5).contiguous()
@@ -255,12 +231,9 @@ class PainterModel(BaseModel):
             self.gt_decision = gt_decision
 
     def forward(self):
-        print("================FORWARD================")
-        print("render", self.render.shape)
-        print("old", self.old.shape)
+
         param, decisions = self.net_g(self.render, self.old)
-        print('param shape', param.shape)
-        print('decisions shape', decisions.shape)
+
         # stroke_param: b, stroke_per_patch, param_per_stroke
         # decision: b, stroke_per_patch, 1
         self.pred_decision = decisions.view(-1, self.opt.used_strokes).contiguous()
@@ -333,7 +306,6 @@ class PainterModel(BaseModel):
         # h_2 = h_2.squeeze(-1)
         theta_2 = torch.acos(torch.tensor(-1., device=param_2.device)) * theta_2.squeeze(-1)
         trace_2 = (w_2 ** 2 + h_2 ** 2) / 4
-        print("gauss", w_1.shape, h_1.shape, theta_1.shape)
         sigma_1_sqrt = self.get_sigma_sqrt(w_1, h_1, theta_1)
         sigma_2 = self.get_sigma(w_2, h_2, theta_2)
         trace_12 = torch.matmul(torch.matmul(sigma_1_sqrt, sigma_2), sigma_1_sqrt)
@@ -356,7 +328,6 @@ class PainterModel(BaseModel):
                     1, valid_gt_param.shape[0], 1)
                 valid_gt_param_broad = valid_gt_param.unsqueeze(0).contiguous().repeat(
                     self.pred_param.shape[1], 1, 1)
-                print(pred_param_broad.shape, valid_gt_param_broad.shape)
                 cost_matrix_w = self.gaussian_w_distance(pred_param_broad, valid_gt_param_broad)
                 decision = self.pred_decision[i]
                 cost_matrix_decision = (1 - decision).unsqueeze(-1).repeat(1, valid_gt_param.shape[0])
