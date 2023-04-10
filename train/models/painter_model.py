@@ -322,12 +322,16 @@ class PainterModel(BaseModel):
         e_1 = e_1.squeeze(-1)
         h_1 = self.length_quadratic_bezier_curve(s_1, c_1, e_1)
         theta_1 = torch.atan2(e_1[:, 0] - s_1[:, 0], e_1[:, 1] - s_1[:, 1])
+        print("s_1", s_1.shape)
+        print("c_1", c_1.shape)
+        print("e_1", e_1.shape)
+        print("h_1", mu_1.shape)
         print("theta_1", theta_1.shape)
 
         # mu_1, w_1, h_1, theta_1 = torch.split(param_1, (2, 1, 1, 1), dim=-1)
         w_1 = w_1.squeeze(-1)
         # h_1 = h_1.squeeze(-1)
-        theta_1 = torch.acos(torch.tensor(-1., device=param_1.device)) * theta_1.squeeze(-1)
+        theta_1 = torch.acos(torch.tensor(-1., device=param_1.device)) * theta_1
         print("theta_1", theta_1.shape)
         trace_1 = (w_1 ** 2 + h_1 ** 2) / 4
 
