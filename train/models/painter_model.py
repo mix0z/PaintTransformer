@@ -314,15 +314,20 @@ class PainterModel(BaseModel):
         return simpsons_rule(0, 1, n, lambda t: torch.linalg.norm(derivative(t), dim=-1))
 
     def gaussian_w_distance(self, param_1, param_2):
+        print("param_1", param_1.shape)
+        print("param_2", param_2.shape)
         s_1, c_1, e_1, mu_1, w_1 = torch.split(param_1, (2, 2, 2, 2, 1), dim=-1)
+
 
         h_1 = self.length_quadratic_bezier_curve(s_1, c_1, e_1)
         theta_1 = torch.atan2(e_1[:, 0] - s_1[:, 0], e_1[:, 1] - s_1[:, 1])
+        print("theta_1", theta_1.shape)
 
         # mu_1, w_1, h_1, theta_1 = torch.split(param_1, (2, 1, 1, 1), dim=-1)
         w_1 = w_1.squeeze(-1)
         h_1 = h_1.squeeze(-1)
         theta_1 = torch.acos(torch.tensor(-1., device=param_1.device)) * theta_1.squeeze(-1)
+        print("theta_1", theta_1.shape)
         trace_1 = (w_1 ** 2 + h_1 ** 2) / 4
 
         s_2, c_2, e_2, mu_2, w_2 = torch.split(param_2, (2, 2, 2, 2, 1), dim=-1)
@@ -334,7 +339,7 @@ class PainterModel(BaseModel):
         h_2 = h_2.squeeze(-1)
         theta_2 = torch.acos(torch.tensor(-1., device=param_2.device)) * theta_2.squeeze(-1)
         trace_2 = (w_2 ** 2 + h_2 ** 2) / 4
-        print(w_1.shape, h_1.shape, theta_1.shape)
+        print("gauss", w_1.shape, h_1.shape, theta_1.shape)
         sigma_1_sqrt = self.get_sigma_sqrt(w_1, h_1, theta_1)
         sigma_2 = self.get_sigma(w_2, h_2, theta_2)
         trace_12 = torch.matmul(torch.matmul(sigma_1_sqrt, sigma_2), sigma_1_sqrt)
