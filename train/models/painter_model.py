@@ -307,7 +307,7 @@ class PainterModel(BaseModel):
         # mu_1, w_1, h_1, theta_1 = torch.split(param_1, (2, 1, 1, 1), dim=-1)
         w_1 = w_1.squeeze(-1)
         # h_1 = h_1.squeeze(-1)
-        theta_1 = torch.acos(torch.tensor(-1., device=param_1.device)) * theta_1.squeeze(-1)
+        # theta_1 = torch.acos(torch.tensor(-1., device=param_1.device)) * theta_1.squeeze(-1)
         trace_1 = (w_1 ** 2 + h_1 ** 2) / 4
 
         s_2, c_2, e_2, mu_2, w_2 = torch.split(param_2, (2, 2, 2, 2, 1), dim=-1)
@@ -318,7 +318,7 @@ class PainterModel(BaseModel):
         # mu_2, w_2, h_2, theta_2 = torch.split(param_2, (2, 1, 1, 1), dim=-1)
         w_2 = w_2.squeeze(-1)
         # h_2 = h_2.squeeze(-1)
-        theta_2 = torch.acos(torch.tensor(-1., device=param_2.device)) * theta_2.squeeze(-1)
+        # theta_2 = torch.acos(torch.tensor(-1., device=param_2.device)) * theta_2.squeeze(-1)
         trace_2 = (w_2 ** 2 + h_2 ** 2) / 4
         sigma_1_sqrt = self.get_sigma_sqrt(w_1, h_1, theta_1)
         sigma_2 = self.get_sigma(w_2, h_2, theta_2)
