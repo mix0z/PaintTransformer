@@ -339,6 +339,8 @@ class PainterModel(BaseModel):
                 cost_matrix_w = self.gaussian_w_distance(pred_param_broad, valid_gt_param_broad)
                 decision = self.pred_decision[i]
                 cost_matrix_decision = (1 - decision).unsqueeze(-1).repeat(1, valid_gt_param.shape[0])
+                print(cost_matrix_l1.shape, cost_matrix_w.shape, cost_matrix_decision.shape)
+                print(cost_matrix_l1.max(), cost_matrix_w.max(), cost_matrix_decision.max())
                 r, c = linear_sum_assignment((cost_matrix_l1 + cost_matrix_w + cost_matrix_decision).cpu())
                 r_idx.append(torch.tensor(r + self.pred_param.shape[1] * i, device=self.device))
                 c_idx.append(torch.tensor(c + cur_valid_gt_size, device=self.device))
