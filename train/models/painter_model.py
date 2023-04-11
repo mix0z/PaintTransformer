@@ -173,6 +173,7 @@ class PainterModel(BaseModel):
 
     def param2stroke(self, param, H, W, decision, batch_size):
         K = self.opt.used_strokes
+        print("K", K)
         # param: b, 12
         b = param.shape[0]
         param_list = torch.split(param, 1, dim=1)
@@ -301,8 +302,8 @@ class PainterModel(BaseModel):
         s_1, c_1, e_1, mu_1, w_1 = torch.split(param_1, (2, 2, 2, 2, 1), dim=-1)
         h_1 = self.length_quadratic_bezier_curve(s_1.view(-1, 2), c_1.view(-1, 2), e_1.view(-1, 2)).view(s_1.shape[:-1])
         theta_1 = torch.atan2(e_1.view(-1, 2)[:, 0] - s_1.view(-1, 2)[:, 0], e_1.view(-1, 2)[:, 1] - s_1.view(-1, 2)[:, 1]).view(s_1.shape[:-1])
-        print(theta_1)
-        print(h_1)
+        print("theta_1", theta_1)
+        print("h_1", h_1)
         # mu_1, w_1, h_1, theta_1 = torch.split(param_1, (2, 1, 1, 1), dim=-1)
         w_1 = w_1.squeeze(-1)
         # h_1 = h_1.squeeze(-1)
@@ -312,6 +313,8 @@ class PainterModel(BaseModel):
         s_2, c_2, e_2, mu_2, w_2 = torch.split(param_2, (2, 2, 2, 2, 1), dim=-1)
         h_2 = self.length_quadratic_bezier_curve(s_2.view(-1, 2), c_2.view(-1, 2), e_2.view(-1, 2)).view(s_2.shape[:-1])
         theta_2 = torch.atan2(e_2.view(-1, 2)[:, 0] - s_2.view(-1, 2)[:, 0], e_2.view(-1, 2)[:, 1] - s_2.view(-1, 2)[:, 1]).view(s_2.shape[:-1])
+        print("theta_2", theta_2)
+        print("h_2", h_2)
         # mu_2, w_2, h_2, theta_2 = torch.split(param_2, (2, 1, 1, 1), dim=-1)
         w_2 = w_2.squeeze(-1)
         # h_2 = h_2.squeeze(-1)
@@ -339,6 +342,7 @@ class PainterModel(BaseModel):
                     1, valid_gt_param.shape[0], 1)
                 valid_gt_param_broad = valid_gt_param.unsqueeze(0).contiguous().repeat(
                     self.pred_param.shape[1], 1, 1)
+                print("PARAM", pred_param_broad, valid_gt_param_broad)
                 cost_matrix_w = self.gaussian_w_distance(pred_param_broad, valid_gt_param_broad)
                 decision = self.pred_decision[i]
                 cost_matrix_decision = (1 - decision).unsqueeze(-1).repeat(1, valid_gt_param.shape[0])
