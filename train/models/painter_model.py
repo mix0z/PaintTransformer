@@ -118,7 +118,7 @@ class PainterModel(BaseModel):
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         parser.set_defaults(dataset_mode='null')
-        parser.add_argument('--used_strokes', type=int, default=8,
+        parser.add_argument('--used_strokes', type=int, default=1,
                             help='actually generated strokes number')
         parser.add_argument('--num_blocks', type=int, default=3,
                             help='number of transformer blocks for stroke generator')
@@ -172,7 +172,7 @@ class PainterModel(BaseModel):
             self.optimizers.append(self.optimizer)
 
     def param2stroke(self, param, H, W, decision, batch_size):
-        K = 5
+        K = self.opt.used_strokes
         # param: b, 12
         b = param.shape[0]
         param_list = torch.split(param, 1, dim=1)
