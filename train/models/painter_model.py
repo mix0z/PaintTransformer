@@ -325,6 +325,13 @@ class PainterModel(BaseModel):
         trace_12 = torch.matmul(torch.matmul(sigma_1_sqrt, sigma_2), sigma_1_sqrt)
         trace_12 = torch.sqrt(trace_12[..., 0, 0] + trace_12[..., 1, 1] + 2 * torch.sqrt(
             trace_12[..., 0, 0] * trace_12[..., 1, 1] - trace_12[..., 0, 1] * trace_12[..., 1, 0]))
+        print("trace_12", trace_12)
+        print("trace_1", trace_1)
+        print("trace_2", trace_2)
+        print("mu_1", mu_1)
+        print("mu_2", mu_2)
+        print("sigma_1_sqrt", sigma_1_sqrt)
+        print("sigma_2", sigma_2)
         return torch.sum((mu_1 - mu_2) ** 2, dim=-1) + trace_1 + trace_2 - 2 * trace_12
 
     def optimize_parameters(self):
