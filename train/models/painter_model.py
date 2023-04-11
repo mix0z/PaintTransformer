@@ -299,7 +299,8 @@ class PainterModel(BaseModel):
         s_1, c_1, e_1, mu_1, w_1 = torch.split(param_1, (2, 2, 2, 2, 1), dim=-1)
         h_1 = self.length_quadratic_bezier_curve(s_1.view(-1, 2), c_1.view(-1, 2), e_1.view(-1, 2)).view(s_1.shape[:-1])
         theta_1 = torch.atan2(e_1.view(-1, 2)[:, 0] - s_1.view(-1, 2)[:, 0], e_1.view(-1, 2)[:, 1] - s_1.view(-1, 2)[:, 1]).view(s_1.shape[:-1])
-
+        print(theta_1)
+        print(h1)
         # mu_1, w_1, h_1, theta_1 = torch.split(param_1, (2, 1, 1, 1), dim=-1)
         w_1 = w_1.squeeze(-1)
         # h_1 = h_1.squeeze(-1)
