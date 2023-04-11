@@ -101,7 +101,15 @@ def sample_quadratic_bezier_curve(s, c, e, num_points=20, dtype=torch.float32):
 
 
 def render_all(s, c, e, locations, colors, widths, H, W, K, canvas_color='gray', num_points=20, dtype=torch.float32):
+    colors = colors * 255.0
+    s = s * H
+    c = c * H
+    e = e * H
+    locations = locations * H
+    widths = widths * H
+
     curve_points = sample_quadratic_bezier_curve(s + locations, c + locations, e + locations, num_points, dtype)
+
     return renderer(curve_points, locations, colors, widths, H, W, K, canvas_color, dtype)
 
 
