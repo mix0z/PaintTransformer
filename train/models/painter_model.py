@@ -214,7 +214,7 @@ class PainterModel(BaseModel):
         self.image_paths = input_dict['A_paths']
         with torch.no_grad():
             old_param = torch.rand(self.opt.batch_size // 4, self.opt.used_strokes, self.d, device=self.device)
-            old_param[:, :, :6] = old_param[:, :, 6] - 0.5
+            old_param[:, :, :6] = old_param[:, :, :6] - 0.5
             # old_param[:, :, :9] = old_param[:, :, :9] * 0.5 + 0.2
             old_param[:, :, -4:-1] = old_param[:, :, -7:-4]
             old_param = old_param.view(-1, self.d).contiguous()
@@ -227,7 +227,7 @@ class PainterModel(BaseModel):
             self.old = old.view(self.opt.batch_size, 3, self.patch_size, self.patch_size).contiguous()
 
             gt_param = torch.rand(self.opt.batch_size, self.opt.used_strokes, self.d, device=self.device)
-            gt_param[:, :, :6] = gt_param[:, :, 6] - 0.5
+            gt_param[:, :, :6] = gt_param[:, :, :6] - 0.5
             # gt_param[:, :, :9] = gt_param[:, :, :9] * 0.5 + 0.2
             gt_param[:, :, -4:-1] = gt_param[:, :, -7:-4]
             self.gt_param = gt_param[:, :, :self.d_shape]
