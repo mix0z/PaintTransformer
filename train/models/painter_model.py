@@ -323,6 +323,7 @@ class PainterModel(BaseModel):
         sigma_1_sqrt = self.get_sigma_sqrt(w_1, h_1, theta_1)
         sigma_2 = self.get_sigma(w_2, h_2, theta_2)
         trace_12 = torch.matmul(torch.matmul(sigma_1_sqrt, sigma_2), sigma_1_sqrt)
+        print("trace_12", trace_12)
         trace_12 = torch.sqrt(trace_12[..., 0, 0] + trace_12[..., 1, 1] + 2 * torch.sqrt(
             trace_12[..., 0, 0] * trace_12[..., 1, 1] - trace_12[..., 0, 1] * trace_12[..., 1, 0]))
         print("trace_12", trace_12)
