@@ -209,7 +209,7 @@ class PainterModel(BaseModel):
                 colors[i:i + batch_size][indexes],
                 widths[i:i + batch_size][indexes], H, W, min(K, indexes.sum().item()))
 
-        return ans.permute(0, 3, 1, 2), bs_mask.permute(0, 3, 1, 2)
+        return ans.view(batch_size, 3, H, W), bs_mask.view(batch_size, 1, H, W)
 
     def set_input(self, input_dict):
         self.image_paths = input_dict['A_paths']
