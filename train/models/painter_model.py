@@ -217,8 +217,8 @@ class PainterModel(BaseModel):
             old_param = torch.rand(self.opt.batch_size // 4, self.opt.used_strokes, self.d, device=self.device)
             old_param[:, :, :4] = old_param[:, :, :4] - 0.5
 
-            left = torch.maximum(torch.zeros(old_param[:, :, :2].shape), old_param[:, :, :2] - 0.2 + 0.5)
-            right = torch.maximum(torch.zeros(old_param[:, :, :2].shape), 0.5 - old_param[:, :, :2] - 0.2)
+            left = torch.maximum(torch.zeros(old_param[:, :, :2].shape, device=self.device), old_param[:, :, :2] - 0.2 + 0.5)
+            right = torch.maximum(torch.zeros(old_param[:, :, :2].shape, device=self.device), 0.5 - old_param[:, :, :2] - 0.2)
             len_gamma = left + right
             old_param[:, :, 4:6] = old_param[:, :, 4:6] * len_gamma
             old_param[:, :, 4:6] = torch.where(old_param[:, :, 4:6] < left, old_param[:, :, 4:6] - 0.5, old_param[:, :, 4:6] - len_gamma + 0.5)
@@ -237,8 +237,8 @@ class PainterModel(BaseModel):
             gt_param = torch.rand(self.opt.batch_size, self.opt.used_strokes, self.d, device=self.device)
             gt_param[:, :, :4] = gt_param[:, :, :4] - 0.5
 
-            left = torch.maximum(torch.zeros(gt_param[:, :, :2].shape), gt_param[:, :, :2] - 0.2 + 0.5)
-            right = torch.maximum(torch.zeros(gt_param[:, :, :2].shape), 0.5 - gt_param[:, :, :2] - 0.2)
+            left = torch.maximum(torch.zeros(gt_param[:, :, :2].shape, device=self.device), gt_param[:, :, :2] - 0.2 + 0.5)
+            right = torch.maximum(torch.zeros(gt_param[:, :, :2].shape, device=self.device), 0.5 - gt_param[:, :, :2] - 0.2)
             len_gamma = left + right
             gt_param[:, :, 4:6] = gt_param[:, :, 4:6] * len_gamma
             gt_param[:, :, 4:6] = torch.where(gt_param[:, :, 4:6] < left, gt_param[:, :, 4:6] - 0.5,
